@@ -105,7 +105,8 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
           img.onload = function () {
               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           }
-          img.src = 'diagram.png';
+          // Needs to be the same domain (origin) to keep canvas origin clean
+          img.src = 'https://raw.githubusercontent.com/yourcircuit/js-sdk/master/diagram.png';
       }
 
       function setupDrawing() {
