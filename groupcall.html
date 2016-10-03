@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 @license
-Copyright (c) 2015 Unify Inc. All rights reserved.
+Copyright (c) 2016 Unify Inc. All rights reserved.
 -->
 <html lang="en">
   <head>
@@ -33,22 +33,23 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
   </head>
 
   <body>
-    <h2>Circuit JS-SDK examples</h2>
     <h3>Group Call with video and screenshare</h3>
     <div>
-      In this example you can start, join or leave a conference call, toggle video. Only up to two remote participants are shown in this example.<br>
-      For screenshare the Circuit SDK Chrome Extension is required. This SDK extension will be uploaded to the Chrome Webstore shortly and also to github.com/yourcircuit where you can limit access to your own site.
+      This example shows how to:
+      <ul>
+        <li>fetch conversations and list their title</li>
+        <li>add injector to create conversation title</li>
+        <li>start, join and leave a conference call</li>
+        <li>toggle video</li>
+        <li>pulling a call on a different device</li>
+        <li>record session and download recording (recording is also posted to conversation)</li>
+        <li>toggle screenshare (requires <a href="https://github.com/circuit/screenshare-chrome-extension" target="_blank">Circuit SDK Chrome Extension</a>)</li>
+        <li>listen to various events such as callStatus and callEnded</li>
+        <li>display call state, media state, conv and call ID</li>
+      </ul>
     </div>
     <div id="mainWrapper" style="display: none">
-      <section id="domainSection">
-        <span>Connect to:</span>
-        <select id="domain">
-          <option value="circuitsandbox.net">circuitsandbox.net</option>
-        </select>
-      </section>
       <section id="connectSection">
-        <input type="email" id="email" placeholder="Email address" value="circuitsdk01@gmail.com"/>
-        <input type="password" id="password" placeholder="Password" value="GoCircuit!"/>
         <button id="logon" onclick="logon()" style="">Logon</button>
         <button id="logout" onclick="logout()" style="display: none">Logout</button>
         <span>(<span id="logonState">Disconnected</span>)</span>
@@ -66,6 +67,10 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
       <hr>
         <input id="enableVideo" type="checkbox" onclick="onVideoChange(this)"/>Enable Video, or
         <input id="enableScreenShare" type="checkbox" onclick="onScreenShareChange(this)"/>Enable ScreenShare
+        <div><input id="enableRecording" type="checkbox" onclick="onRecordingChange(this)"/>Record Session</div>
+      </section>
+      <section>
+        <a id="download" download href="">Download recording</a>
       </section>
       <section id="output">
         <div>Call state: <span id="callState"></span></div>
@@ -82,7 +87,7 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
     <span id="errorMessage" style="display: none"></span>
     <audio id="remoteAudio" autoplay="autoplay"></audio>
 
-    <script src="https://circuitsandbox.net/circuit.js"></script>
+    <script src="https://circuitdev.unify.com:8094/circuit.js"></script>
 
     <script>
       var _client;
@@ -90,9 +95,6 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
       var _conversations = {};  // Hashtable of converastions with convId as key
       var _calls = {};          // Hashtable of calls with convId as key
 
-      var $domain = document.getElementById('domain');
-      var $email = document.getElementById('email');
-      var $password = document.getElementById('password');
       var $logonButton = document.getElementById('logon');
       var $logoutButton = document.getElementById('logout');
       var $logonState = document.getElementById('logonState');
@@ -103,6 +105,7 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
       var $remoteAudio = document.getElementById('remoteAudio');
       var $enableVideo = document.getElementById('enableVideo');
       var $enableScreenShare = document.getElementById('enableScreenShare');
+      var $enableRecording = document.getElementById('enableRecording');
       var $startButton = document.getElementById('startButton');
       var $joinButton = document.getElementById('joinButton');
       var $leaveButton = document.getElementById('leaveButton');
@@ -113,6 +116,7 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
       var $convId = document.getElementById('convId');
       var $callId = document.getElementById('callId');
       var $errorMessage = document.getElementById('errorMessage');
+      var $download = document.getElementById('download');
 
       if (typeof Circuit === 'undefined') {
         $errorMessage.textContent = "Could not load SDK (circuit.js).";
@@ -124,7 +128,8 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
         document.getElementById('mainWrapper').style.display = 'block';
       }
 
-      Circuit.logger.setLevel(Circuit.Enums.LogLevel.Debug);
+      // Displays SDK internal logs in console
+      // Circuit.logger.setLevel(Circuit.Enums.LogLevel.Debug);
 
       // Helper function to get the list element
       function getListOption(convId) {
@@ -150,6 +155,9 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
         $enableVideo.disabled = true;
         $enableScreenShare.checked = false;
         $enableScreenShare.disabled = true;
+        $enableRecording.checked = false;
+        $enableRecording.disabled = true;
+        $download.style.display = 'none';
       }
 
       // Update the UI call section for the selected call
@@ -168,6 +176,7 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
         $convList.disabled = !call.isRemote && call.isEstablished;
         $enableVideo.disabled = !(!call.isRemote && call.isEstablished);
         $enableScreenShare.disabled = !(!call.isRemote && call.isEstablished);
+        $enableRecording.disabled = !(!call.isRemote && call.isEstablished);
 
         // Set local video stream
         $localVideo.src = call.localVideoUrl || '';
@@ -243,6 +252,24 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
               resetCallUI();
             }
           });
+
+          _client.addEventListener('itemAdded', function (evt) {
+            var item = evt.item;
+            if (item.rtc && item.rtc.type === 'ENDED' && item.attachments && item.attachments.length) {
+              console.log('Received itemAdded event with a recording');
+            }
+          });
+
+          _client.addEventListener('itemUpdated', function (evt) {
+            var item = evt.item;
+            if (item.rtc && item.rtc.type === 'ENDED' && item.attachments && item.attachments.length) {
+              console.log('Received itemUpdated event with a recording');
+              $download.style.display = 'block';
+              $download.href = item.attachments[0].url;
+            } else {
+              $download.style.display = 'none';
+            }
+          });
         }
       }
 
@@ -314,17 +341,15 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
       }
 
       function logon() {
-        if (_client || !$email.value || !$password.value) {
-          return;
-        }
-        _client = new Circuit.Client({domain: $domain.value});
+        _client = new Circuit.Client({
+          client_id: '6e8bbd3b5da74358ab707a498b5632e6',
+          scope: 'READ_USER_PROFILE,READ_CONVERSATIONS'
+        });
+
         addClientEventListeners();
 
-        _client.logon($email.value, $password.value).then(function (user) {
+        _client.logon().then(function (user) {
           _localUser = user;
-          $domain.disabled = true;
-          $email.disabled = true;
-          $password.disabled = true;
           $logonButton.style.display = 'none';
           $logoutButton.style.display = '';
         })
@@ -352,9 +377,6 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
         _calls = {};
 
         $convList.options.length = 0;
-        $domain.disabled = false;
-        $email.disabled = false;
-        $password.disabled = false;
         $logonButton.style.display = '';
         $logoutButton.style.display = 'none';
         $logonState.textContent = 'Disconnected';
@@ -382,6 +404,25 @@ Copyright (c) 2015 Unify Inc. All rights reserved.
             console.log('Screenshare was successfully toggled');
           }).catch(function (err) {
             console.error('Failed to toggle screenshare. ', err);
+          })
+        }
+      }
+
+      function onRecordingChange() {
+        var selectedConvId = $convList.options[$convList.selectedIndex].value;
+        var call = _calls[selectedConvId];
+
+        if (!enableRecording.checked) {
+          _client.stopRecording(call.callId).then(function () {
+            console.log('Recording stopped');
+          }).catch(function (err) {
+            console.error('Failed to stop recording. ', err);
+          })
+        } else {
+          _client.startRecording(call.callId, true).then(function () {
+            console.log('Recording started');
+          }).catch(function (err) {
+            console.error('Failed to record session. ', err);
           })
         }
       }
