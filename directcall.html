@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<!--
+@license
+Copyright (c) 2016 Unify Inc. All rights reserved.
+-->
+<html lang="en">
+  <head>
+    <title>Circuit JS-SDK</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 12px;
+      }
+      section { padding-top: 15px; }
+      input { margin-right: 10px; }
+      button {
+        margin-right: 10px;
+      }
+      pre {padding: 5px; margin: 5px; }
+      .string { color: green; }
+      .number { color: darkorange; }
+      .boolean { color: blue; }
+      .null { color: magenta; }
+      .key { color: red; }
+      .error { color: red; }
+      #output span { color: blue; }
+      #errorMessage {
+        margin-top: 10px;
+        color: red;
+      }
+    </style>
+    <script src="https://circuitdev.unify.com:8094/circuit.js"></script>
+  </head>
+
+  <body>
+    <h3>Direct call (audio & video)</h3>
+    <p>
+      New to <a href="https://www.circuit.com/" target="_blank">Circuit</a>? <a href="https://developers.circuit.com/registration"  target="_blank">Register</a> for a <a href="https://developers.circuit.com"  target="_blank">developer</a> account.
+    </p>
+    <p>In this example you can initiate a direct call to another Circuit user and toggle video.</p>
+    <div id="mainWrapper" style="display: none">
+      <section id="domainSection">
+        <span>Connect to:</span>
+        <select id="domain">
+          <option value="sdk.circuitsandbox.net">sdk.circuitsandbox.net</option>
+        </select>
+      </section>
+      <section id="connectSection">
+        <input type="email" id="email" placeholder="Email address" value="circuitsdk01@gmail.com"/>
+        <input type="password" id="password" placeholder="Password" value="GoCircuit!"/>
+        <button id="logon" onclick="logon()" style="">Logon</button>
+        <button id="logout" onclick="logout()" style="display: none">Logout</button>
+      </section>
+      <section>
+        <input type="email" id="peerUser" placeholder="Callee's Circuit email" value="circuitsdk02@gmail.com"/>
+        <button onclick="call()" id="callButton">Call</button>
+        <button onclick="endCall()" id="endCallButton" style="display: none">End call</button>
+      </section>
+      <section>
+        <input id="enableVideo" type="checkbox" disabled onclick="onVideoChange()"/>Enable Video
+      </section>
+      <section id="output">
+        <div>Connection state: <span id="logonState">Disconnected</span></div>
+        <div>Call state: <span id="callState"></span></div>
+        <div>Media: <span id="media"></span></div>
+        <div>Conversation ID: <span id="convId"></span></div>
+        <div>Call ID: <span id="callId"></span></div>
+        <div>
+          <video id="localVideo" height="200px" autoplay="true"></video>
+          <video id="remoteVideo" height="200px" autoplay="true"></video>
+        </div>
+      </section>
+    </div>
+    <span id="errorMessage" style="display: none"></span>
+    <audio id="remoteAudio" autoplay="autoplay"></audio>
+    <script>
+      var _client;
+      var _localUser;
+      var _conversation;
+      var _call;
+
+      var $domain = document.getElementById('domain');
+      var $email = document.getElementById('email');
+      var $password = document.getElementById('password');
+      var $peerUser = document.getElementById('peerUser');
+      var $logonButton = document.getElementById('logon');
+      var $logoutButton = document.getElementById('logout');
+      var $logonState = document.getElementById('logonState');
+      var $mediaType = document.getElementById('mediaType');
+      var $localVideo = document.getElementById('localVideo');
+      var $remoteVideo = document.getElementById('remoteVideo');
+      var $remoteAudio = document.getElementById('remoteAudio');
+      var $enableVideo = document.getElementById('enableVideo');
+      var $callButton = document.getElementById('callButton');
+      var $endCallButton = document.getElementById('endCallButton');
+      var $callState = document.getElementById('callState');
+      var $media = document.getElementById('media');
+      var $convId = document.getElementById('convId');
+      var $callId = document.getElementById('callId');
+      var $errorMessage = document.getElementById('errorMessage');
+
+      if (typeof Circuit === 'undefined') {
+        $errorMessage.textContent = "Could not load SDK (circuit.js). Make sure Circuit is running on https://localhost:8094.";
+        $errorMessage.style.display = 'block';
+      } else if (!Circuit.isCompatible()) {
+        $errorMessage.textContent = "Sorry, your browser is not supported. Chrome works :)";
+        $errorMessage.style.display = 'block';
+      } else {
+        document.getElementById('mainWrapper').style.display = 'block';
+      }
+
+      function resetCallUI() {
+        $callState.textContent = '';
+        $media.textContent = '';
+        $callId.textContent = '';
+        $convId.textContent = '';
+        $callButton.style.display = '';
+        $endCallButton.style.display = 'none';
+        $localVideo.src = '';
+        $remoteVideo.src = '';
+        $remoteAudio.src = '';
+        $enableVideo.checked = false;
+        $enableVideo.disabled = false;
+      }
+
+      function setCallUI(call) {
+        _call = call;
+        $convId.textContent = _call.convId;
+        $callState.textContent = _call.state;
+        $callId.textContent = _call.callId;
+        $media.textContent = (_call.activeMediaType.audio ? 'audio' : '') + (_call.activeMediaType.video ? '+video' : '');
+        $callButton.style.display = 'none';
+        $endCallButton.style.display = '';
+        $enableVideo.checked = !!_call.localMediaType.video;
+        $enableVideo.disabled = !_call.isEstablished;
+
+        // Set local video stream
+        $localVideo.src = _call.localVideoUrl;
+
+        // Enable video checkbox
+        if (_call.isEstablished) {
+          $remoteAudio.src = _call.remoteAudioUrl;
+          // Set remote video stream
+          if (_call.participants && _call.participants[0]) {
+            $remoteVideo.src = _call.participants[0].videoUrl;
+          }
+        }
+      }
+
+      function addClientEventListeners() {
+        if (_client) {
+          _client.addEventListener('connectionStateChanged', function onConnectionStateChanged(evt) {
+            console.log('Received connectionStateChanged event - state = ', evt.state)
+            $logonState.textContent = evt.state;
+          });
+
+          _client.addEventListener('callStatus', function (evt) {
+            if (_call && _call.callId === evt.call.callId) {
+              console.log('Received callStatus event - call = ', evt.call)
+              setCallUI(evt.call);
+            }
+          });
+
+          _client.addEventListener('callIncoming', function (evt) {
+            console.log('Received callIncoming event - call = ', evt.call)
+            setCallUI(evt.call);
+
+            // Automatically answer the call
+            var mediaType = {audio: true, video: enableVideo.checked};
+            _client.answerCall(_call.callId, mediaType).then(function () {
+              console.log('Call has been answered')
+            }).catch(function (err) {
+              console.error('Failed to answer call. ', err)
+            });
+          });
+
+          _client.addEventListener('callEnded', function (evt) {
+            if (_call && _call.callId === evt.call.callId) {
+              console.log('Received callEnded event - call = ', evt.call)
+              _call = null;
+              resetCallUI();
+            }
+          });
+        }
+      }
+
+      function logon() {
+        if (_client || !$email.value || !$password.value) {
+          return;
+        }
+        _client = new Circuit.Client({domain: $domain.value});
+        addClientEventListeners();
+
+        _client.logon($email.value, $password.value).then(function (user) {
+          _localUser = user;
+          $domain.disabled = true;
+          $email.disabled = true;
+          $password.disabled = true;
+          $logonButton.style.display = 'none';
+          $logoutButton.style.display = '';
+        }).catch(function (e) {
+          console.error(e);
+          alert('Unable to logon. Error: ' + e);
+          _client.removeAllListeners();
+          _client = null;
+        });
+      }
+
+      function logout() {
+        if (!_client) {
+          return;
+        }
+        _localUser = null;
+        _client.logout();
+        _client.removeAllListeners();
+        _client = null;
+
+        $domain.disabled = false;
+        $email.disabled = false;
+        $password.disabled = false;
+        $logonButton.style.display = '';
+        $logoutButton.style.display = 'none';
+        $logonState.textContent = 'Disconnected';
+      }
+
+      function call() {
+        if (_call) {
+          return;
+        }
+
+        if (!_client || !_localUser) { return alert('Caller is not logged in'); }
+        if (!$peerUser.value) { return alert('Callee email missing'); }
+
+        var mediaType = {audio: true, video: enableVideo.checked};
+        _client.makeCall($peerUser.value, mediaType)
+          .then(setCallUI)
+          .catch(function (err) {
+          alert('Error initiating a call with ' + $peerUser.value + '. ' + err);
+          console.error(err);
+        });
+      }
+
+      function endCall() {
+        if (_call) {
+          _client.endCall(_call.callId).then(function () {
+            console.log('Successfully ended call');
+            _call = null;
+            resetCallUI();
+          });
+        }
+      }
+
+      function onVideoChange() {
+        if (_call && _call.localMediaType.video !== enableVideo.checked) {
+          _client.toggleVideo(_call.callId).then(function () {
+            console.log('Local video was successfully toggled');
+          }).catch(function (err) {
+            console.error('Failed to toggle video. ', err);
+          })
+        }
+      }
+
+      resetCallUI();
+    </script>
+  </body>
+</html>
+
