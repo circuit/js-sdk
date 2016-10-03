@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!--
+@license
+Copyright (c) 2016 Unify Inc. All rights reserved.
+-->
+<html lang="en">
+  <head>
+    <title>Circuit JS-SDK</title>
+    <style>
+      circuit-chat {
+        width: 200px;
+        height: 200px;
+      }
+      #conversationId {
+        width: 240px;
+      }
+      body {
+        font-family: sans-serif;
+        font-size: 13px;
+      }
+      .hide {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="https://polygit.org/components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link href="https://polygit.org/components/polymer/polymer.html" rel="import">
+    <script src="https://circuitsandbox.net/circuit.js"></script>
+    <!-- Don't load the element from polygit. This is only used for demo purposes -->
+    <link href="https://polygit.org/circuit-*+yourcircuit+:master/components/circuit-chat/circuit-chat.html" rel="import">
+
+    <p>The <code><a href="https://github.com/yourcircuit/circuit-chat">circuit-chat</a></code> component is a simple chat module that can easily be embedded into any website.<br>
+      The conversationId can be defined in HTML, or assigned via JavaScript.</p>
+
+    <h4>Usage:</h4>
+    <xmp class="prettyprint"><circuit-chat conversation="4833fcdb-2b73-42e1-b4be-2a57faa48735"></circuit-chat></xmp>
+
+    <h4>Live example:</h4>
+    <input id="email" type="text" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="logonBtn" onclick="logon()">Logon</button>
+    <button id="logoutBtn" class="hide" onclick="logout()">Logout</button>
+    <span id="connState">Disconnected</span>
+    <p>Paste a conversation ID of a conversation you are part of and start chatting.</p>
+    <input id="conversationId" placeholder="Enter a conversation ID">
+    <br><br>
+
+    <!-- conversation attribute is passed in below in JS. For predefined conversations, the
+             conversation can be passed in via HTML -->
+    <circuit-chat id="chat"></circuit-chat>
+
+
+    <script>
+      // Create Circuit client instance
+      var client = new Circuit.Client();
+
+      function logon() {
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+
+        // Pass the client to the component
+        document.getElementById('chat').api = client;
+
+        client.logon({email: email, password:password}).then(function () {
+          // Set the conversation property of the component. Could also be defined directly
+          // on the component, e.g. <circuit-chat conversation="1234"></circuit-chat>
+          document.getElementById('conversationId').addEventListener('input', function (evt) {
+            if (evt.target.value.length >= 36) {
+              document.getElementById('chat').conversation = evt.target.value;
+            }
+          });
+
+          // Show how circuit-chat fires on-message events
+          document.getElementById('chat').addEventListener('on-message', function (message) {
+            console.log('Received message: ' + message);
+          });
+        }).catch(function (e) {
+          console.log('Unable to logon. ' + e);
+          client = null;
+        });
+
+        // Show connection state and correct logon/logout button
+        client.addEventListener('connectionStateChanged', function (evt) {
+          document.getElementById('connState').textContent = evt.state;
+          if (evt.state === Circuit.Enums.ConnectionState.Disconnected) {
+            document.getElementById('logonBtn').classList.remove('hide');
+            document.getElementById('logoutBtn').classList.add('hide');
+          } else {
+            document.getElementById('logonBtn').classList.add('hide');
+            document.getElementById('logoutBtn').classList.remove('hide');          
+          }
+        });        
+      }
+
+      function logout() {
+        client.logout();
+      }
+    </script>
+  </body>
+</html>
+
