@@ -139,11 +139,8 @@
             }
         };
 
-        // Parse domain
-        _self.parseDomain = getParameterByName.bind(null, 'domain');
-
         Object.defineProperty(_self, 'domain', {
-            get: function () { return getParameterByName('domain'); },
+            get: function () { return getParameterByName('domain') || 'circuitsandbox.net'; },
             enumerable: true,
             configurable: false
         });
