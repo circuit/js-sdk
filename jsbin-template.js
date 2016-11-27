@@ -119,7 +119,7 @@
             }
 
             _client.addEventListener('connectionStateChanged', evt => {
-                print(`Received connectionStateChanged event with reason: ${evt.state}`);
+                print(`Received connectionStateChanged event. state: ${evt.state}`);
                 connectionState1.textContent = connectionState2.textContent = `(${evt.state})`;
                 let connected = (evt.state === Circuit.Enums.ConnectionState.Connected);
                 loggedOutSection.style.display = connected ? 'none' : '';
