@@ -8,7 +8,7 @@
         let client_ids = {
             'circuitsandbox.net': 'ea9ccdf487b94a208f7ae31f3a201710',
             'beta.circuit.com': '11111111111111111111111111111111',
-            'circuitdev.unify.com:8094': '8e04fc659d9148ca9ddaff1e68a1d662'
+            'circuitdev.unify.com:8094': 'c15ddf9ce5064fb9b27c09c108756fdb'
         };
         let domains = Object.keys(client_ids);
 
