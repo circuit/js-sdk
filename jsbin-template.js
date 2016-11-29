@@ -6,7 +6,7 @@
         let _client;
 
         let client_ids = {
-            'circuitsandbox.net': 'ea9ccdf487b94a208f7ae31f3a201710',
+            'circuitsandbox.net': '3b15de4ffbd84dbc86e6a48122d412e2',
             'beta.circuit.com': '913da4769e4c4a42b87a60894a05677d',
             'circuitdev.unify.com:8094': 'c15ddf9ce5064fb9b27c09c108756fdb'
         };
