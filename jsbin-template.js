@@ -104,18 +104,52 @@
             currDomain && (document.querySelector('#domainsel [value="' + encodeURIComponent(currDomain) + '"]').selected = true);
 
             // Add print container
-            let result = document.createElement('pre');
+            let result = document.createElement('section');
             document.body.appendChild(result);
 
             // Helper to print output
-            function print(s) {
-              if (s.message && (s.code || s.stack)) {
-                result.innerHTML += `<span style="color:red">${s}<br></span>`;
-                console.error(s);
-              } else {
-                s = s.message || s;
-                result.innerHTML += `<span>${s}<br></span>`;
-              }
+            function print(s, obj) {
+                let el = document.createElement('pre');
+                if (s.message && (s.code || s.stack)) {
+                    el.classList.add('error');
+                    el.textContent = s;
+                    console.error(s);
+                } else {
+                    s = s.message || s;
+                    el.textContent = s;
+                }
+                el.textContent += '\n';
+                result.appendChild(el);
+
+                if (obj) {
+                    if (typeof(obj) === 'object') {
+                        obj = JSON.stringify(obj, undefined, 2);
+                        obj = syntaxHighlight(obj);
+                    }
+                    el = document.createElement('pre');
+                    el.classList.add('json');
+                    el.innerHTML = obj;
+                    result.appendChild(el);       
+                }
+            }
+
+            function syntaxHighlight(json) {
+                json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+                  var cls = 'number';
+                  if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                      cls = 'key';
+                    } else {
+                      cls = 'string';
+                    }
+                  } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                  } else if (/null/.test(match)) {
+                    cls = 'null';
+                  }
+                  return '<span class="' + cls + '">' + match + '</span>';
+                });
             }
 
             _client.addEventListener('connectionStateChanged', evt => {
@@ -128,6 +162,8 @@
             });
 
             loggedInSection.style.display = 'none';
+
+            setTimeout(() => document.querySelector('#edit-with-js-bin').textContent = 'Edit or Clone this JS Bin', 100);
 
             console.log('Circuit JSBin template initialized');
 
