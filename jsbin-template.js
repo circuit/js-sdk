@@ -163,7 +163,7 @@
 
             loggedInSection.style.display = 'none';
 
-            setTimeout(() => document.querySelector('#edit-with-js-bin').textContent = 'Edit or Clone this JS Bin', 100);
+            setTimeout(() => document.querySelector('#edit-with-js-bin').textContent = 'Edit or Clone this JS Bin', 300);
 
             console.log('Circuit JSBin template initialized');
 
