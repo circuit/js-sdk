@@ -27,8 +27,6 @@
         _self.init = (client, el, o) => {
             _client = client;
 
-            o.fork = o.fork || `Fork your own bin using the 'Edit' option on the top right of the page.`;
-
             let title = document.createElement('h3');
             title.textContent = o.title;
             el.appendChild(title);
@@ -37,9 +35,6 @@
             let description = document.createElement('div');
             description.textContent = o.description;
             summary.appendChild(description);
-            let fork = document.createElement('div');
-            fork.textContent = o.fork;
-            summary.appendChild(fork);
             el.appendChild(summary);
             
             let apis = document.createElement('h4');
