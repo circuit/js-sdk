@@ -72,9 +72,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       <section class="error" ng-show="!!error">{{error}}</section>
       <section class="login" ng-show="!error">
         <div>
-          <input type="email" ng-model="email" ng-disabled="!!localUser" placeholder="Your Circuit email"/>
-          <input type="password" ng-model="password" ng-disabled="!!localUser" placeholder="Password"/>
-          <button ng-click="login()" ng-show="!localUser" ng-disabled="!email || !password">Logon</button>
+          <button ng-click="login()" ng-show="!localUser">Logon</button>
           <button ng-click="logout()" ng-show="!!localUser">Logout</button>
         </div>
       </section>
@@ -123,8 +121,6 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       app.controller('ctrl', ['$rootScope', '$scope','$sce', function($rootScope, $scope, $sce){
         $scope.domain = 'sdk.circuitsandbox.net';
         $scope.localUser = null;
-        $scope.email = 'circuitsdk01@gmail.com';
-        $scope.password = '';
         $scope.registrationState = null;
         $scope.conversations = [];
         $scope.users = [];
@@ -150,7 +146,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
             scope: 'ALL' // Asking for ALL permissions because all these examples use the same domain
           });
 
-          client.logon($scope.email, $scope.password).then(function (user) {
+          client.logon().then(function (user) {
             $scope.localUser = user;
             setupEventListeners(user);
           }).then(function () {
