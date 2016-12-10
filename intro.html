@@ -51,7 +51,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       var client = new Circuit.Client({
         domain: 'circuitsandbox.net',
         client_id: '78cafde2f6854ad5ad80a67c532687bc',
-        scope: 'READ_USER_PROFILE,READ_CONVERSATIONS'
+        scope: 'ALL' // Asking for ALL permissions because all these examples use the same domain
       });
 
       // Logon using OAuth2, then fetch the most recent conversation and print the conversation
