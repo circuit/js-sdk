@@ -52,12 +52,10 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       <section id="domainSection">
         <span>Connect to:</span>
         <select id="domain">
-          <option value="sdk.circuitsandbox.net">sdk.circuitsandbox.net</option>
+          <option value="circuitsandbox.net">circuitsandbox.net</option>
         </select>
       </section>
       <section id="connectSection">
-        <input type="email" id="email" placeholder="Email address" value="roger.urscheler@unify.com"/>
-        <input type="password" id="password" placeholder="Password"/>
         <button id="logon" onclick="logon()" style="">Logon</button>
         <button id="logout" onclick="logout()" style="display: none">Logout</button>
       </section>
@@ -92,8 +90,6 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       var _call;
 
       var $domain = document.getElementById('domain');
-      var $email = document.getElementById('email');
-      var $password = document.getElementById('password');
       var $number = document.getElementById('number');
       var $logonButton = document.getElementById('logon');
       var $logoutButton = document.getElementById('logout');
@@ -162,17 +158,19 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
       }
 
       function logon() {
-        if (_client || !$email.value || !$password.value) {
+        if (_client) {
           return;
         }
-        _client = new Circuit.Client({domain: $domain.value});
+        _client = new Circuit.Client({
+          domain: $domain.value,
+          client_id: '78cafde2f6854ad5ad80a67c532687bc',
+          scope: 'ALL' // Asking for ALL permissions because all these examples use the same domain
+        });
         addClientEventListeners();
 
-        _client.logon($email.value, $password.value).then(function (user) {
+        _client.logon().then(function (user) {
           _localUser = user;
           $domain.disabled = true;
-          $email.disabled = true;
-          $password.disabled = true;
           $logonButton.style.display = 'none';
           $logoutButton.style.display = '';
         }).catch(function (e) {
@@ -193,8 +191,6 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
         _client = null;
 
         $domain.disabled = false;
-        $email.disabled = false;
-        $password.disabled = false;
         $logonButton.style.display = '';
         $logoutButton.style.display = 'none';
         $logonState.textContent = 'Disconnected';

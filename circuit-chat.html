@@ -38,8 +38,6 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
     <xmp class="prettyprint"><circuit-chat conversation="4833fcdb-2b73-42e1-b4be-2a57faa48735"></circuit-chat></xmp>
 
     <h4>Live example:</h4>
-    <input id="email" type="text" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
     <button id="logonBtn" onclick="logon()">Logon</button>
     <button id="logoutBtn" class="hide" onclick="logout()">Logout</button>
     <span id="connState">Disconnected</span>
@@ -54,16 +52,17 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
 
     <script>
       // Create Circuit client instance
-      var client = new Circuit.Client();
+      var client = new Circuit.Client({
+        domain: 'circuitsandbox.net',
+        client_id: '78cafde2f6854ad5ad80a67c532687bc',
+        scope: 'ALL' // Asking for ALL permissions because all these examples use the same domain
+      });
 
       function logon() {
-        var email = document.getElementById('email').value;
-        var password = document.getElementById('password').value;
-
         // Pass the client to the component
         document.getElementById('chat').api = client;
 
-        client.logon({email: email, password:password}).then(function () {
+        client.logon().then(function () {
           // Set the conversation property of the component. Could also be defined directly
           // on the component, e.g. <circuit-chat conversation="1234"></circuit-chat>
           document.getElementById('conversationId').addEventListener('input', function (evt) {
