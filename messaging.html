@@ -403,7 +403,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
           Circuit.Injectors.itemInjector = function (item) {
             item.sentByMe = (item.creatorId === client.loggedOnUser.userId);
 
-            if (item === client.loggedOnUser.userId) {
+            if (item.sentByMe) {
               item.creator = client.loggedOnUser;
             } else if ($scope.selectedConv && $scope.selectedConv.otherUsers) {
               item.creator = $scope.selectedConv.otherUsers.find(function (u) {
