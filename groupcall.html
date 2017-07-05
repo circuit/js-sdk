@@ -440,7 +440,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
 
       function populateDropdown(conversations) {
         _conversations = {};
-        conversations.filter(function (c) {
+        conversations.reverse().filter(function (c) {
           if (c && c.type === Circuit.Enums.ConversationType.GROUP) {
             _conversations[c.convId] = c;
             return true;
