@@ -353,7 +353,7 @@ Copyright (c) 2016 Unify Inc. All rights reserved.
           $logonButton.style.display = 'none';
           $logoutButton.style.display = '';
         })
-        .then(_client.getConversations)
+        .then(() => _client.getConversations({direction: 'BEFORE'}))
         .then(populateDropdown)
         .then(_client.getCalls)
         .then(cacheCalls)
