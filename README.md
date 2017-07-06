@@ -1,3 +1,3 @@
-# Circuit JavaScript SDK
+Moved to https://github.com/circuit/circuit-js-sdk
 
-View examples at [https://circuit.github.io/jssdk](https://circuit.github.io/jssdk)
+> These repo will be deleted in the near future
