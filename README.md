@@ -1,3 +1,4 @@
-Moved to https://github.com/circuit/circuit-js-sdk
+View examples are https://circuit.github.io/jssdk.html
 
-> These repo will be deleted in the near future
+
+> This repo will be deleted in the near future
