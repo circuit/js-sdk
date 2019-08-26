@@ -151,6 +151,9 @@
                 print(`Received connectionStateChanged event. state: ${evt.state}`);
                 connectionState1.textContent = connectionState2.textContent = `(${evt.state})`;
                 let connected = (evt.state === Circuit.Enums.ConnectionState.Connected);
+                if (Circuit.Enums.ConnectionState.Ready) {
+                    connected = (evt.state === Circuit.Enums.ConnectionState.Ready);
+                }
                 loggedOutSection.style.display = connected ? 'none' : '';
                 loggedInSection.style.display = !connected ? 'none' : '';
                 document.getElementById('main').style.display = !connected ? 'none' : '';
